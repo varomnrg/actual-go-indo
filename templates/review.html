@@ -1,46 +1,50 @@
 {{define "reviewList"}}
 {{template "pageStart" .}}
-<h1 style="margin-bottom:1.5rem">Review Imports</h1>
+<div class="page-header">
+    <h1>Review Imports</h1>
+    <p>Manage and review your imported bank statements</p>
+</div>
 {{if .Imports}}
-<table style="width:100%;border-collapse:collapse">
-    <thead>
-        <tr style="text-align:left;border-bottom:2px solid #dee2e6">
-            <th style="padding:.5rem">Date</th>
-            <th style="padding:.5rem">Bank</th>
-            <th style="padding:.5rem">Filename</th>
-            <th style="padding:.5rem">Status</th>
-            <th style="padding:.5rem">Transactions</th>
-            <th style="padding:.5rem">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .Imports}}
-        <tr style="border-bottom:1px solid #dee2e6">
-            <td style="padding:.5rem">{{displayDate (.CreatedAt.Format "2006-01-02")}}</td>
-            <td style="padding:.5rem">{{.Bank}}</td>
-            <td style="padding:.5rem">{{.Filename}}</td>
-            <td style="padding:.5rem">
-                <span style="
-                    display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.8rem;
-                    {{if eq .Status "pending"}}background:#fff3cd;color:#856404{{end}}
-                    {{if eq .Status "parsing"}}background:#cce5ff;color:#004085{{end}}
-                    {{if eq .Status "done"}}background:#d4edda;color:#155724{{end}}
-                    {{if eq .Status "error"}}background:#f8d7da;color:#721c24{{end}}
-                ">{{.Status}}</span>
-            </td>
-            <td style="padding:.5rem">
-                {{.TxCount}} total
-                {{if .PendingCount}}<span style="color:#856404">({{.PendingCount}} pending)</span>{{end}}
-            </td>
-            <td style="padding:.5rem">
-                <a href="/review/{{.ID}}" class="btn btn-primary" style="font-size:.8rem">Review</a>
-            </td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
+<div class="table-wrapper">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Bank</th>
+                <th>Filename</th>
+                <th>Status</th>
+                <th>Transactions</th>
+                <th style="text-align:right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Imports}}
+            <tr>
+                <td>{{displayDate (.CreatedAt.Format "2006-01-02")}}</td>
+                <td><strong style="text-transform:uppercase;font-size:.8rem;letter-spacing:.02em">{{.Bank}}</strong></td>
+                <td>{{.Filename}}</td>
+                <td>
+                    <span class="badge
+                        {{if eq .Status "pending"}}badge-pending{{end}}
+                        {{if eq .Status "parsing"}}badge-parsing{{end}}
+                        {{if eq .Status "done"}}badge-done{{end}}
+                        {{if eq .Status "error"}}badge-error{{end}}"
+                    >{{.Status}}</span>
+                </td>
+                <td>
+                    {{.TxCount}} total
+                    {{if .PendingCount}}<span style="color:#856404;font-size:.85rem;margin-left:.25rem">({{.PendingCount}} pending)</span>{{end}}
+                </td>
+                <td style="text-align:right">
+                    <a href="/review/{{.ID}}" class="btn btn-primary" style="font-size:.8rem">Review</a>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
 {{else}}
-<p>No imports yet. <a href="/upload">Upload a statement</a> to get started.</p>
+<p class="empty-state">No imports yet. <a href="/upload">Upload a statement</a> to get started.</p>
 {{end}}
 {{template "pageEnd" .}}
 {{end}}
@@ -125,86 +129,63 @@
     }
 }" @keydown.window="handleKey">
 
-<style>
-.focused-row { box-shadow: inset 4px 0 0 #0d6efd; background: #f0f7ff; }
-</style>
     {{if .PushResult}}
-    <div style="background:#d4edda;color:#155724;padding:.75rem 1rem;border-radius:4px;margin-bottom:1rem">
-        {{.PushResult}}
-    </div>
+    <div class="alert alert-success">{{.PushResult}}</div>
     {{end}}
     {{if .PushError}}
-    <div style="background:#f8d7da;color:#721c24;padding:.75rem 1rem;border-radius:4px;margin-bottom:1rem">
-        {{.PushError}}
-    </div>
+    <div class="alert alert-danger">{{.PushError}}</div>
     {{end}}
     {{if .Warning}}
-    <div style="background:#fff3cd;color:#856404;padding:.75rem 1rem;border-radius:4px;margin-bottom:1rem">
-        {{.Warning}}
-    </div>
+    <div class="alert alert-warning">{{.Warning}}</div>
     {{end}}
     {{if eq .Import.Status "error"}}
-    <div style="background:#f8d7da;color:#721c24;padding:.75rem 1rem;border-radius:4px;margin-bottom:.75rem">
-        <strong>Parse error:</strong> {{.Import.ErrorMsg}}
-    </div>
+    <div class="alert alert-danger"><strong>Parse error:</strong> {{.Import.ErrorMsg}}</div>
     <form method="POST" action="/import/{{.Import.ID}}/retry" style="margin-bottom:1.5rem;display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap">
         {{if eq .Import.Bank "mandiri"}}
         <div>
-            <label style="display:block;font-size:.85rem;margin-bottom:.25rem">Password</label>
+            <label style="display:block;font-size:.85rem;margin-bottom:.25rem;font-weight:500">Password</label>
             <input type="password" name="password" placeholder="DDMMYYYY"
-                style="padding:.4rem .6rem;border:1px solid #ced4da;border-radius:4px;font-size:.9rem">
+                class="form-control" style="max-width:160px;font-size:.9rem">
         </div>
         {{end}}
         <button type="submit" class="btn btn-secondary">Retry</button>
     </form>
     {{end}}
 
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
         <div>
-            <h1>Review Transactions</h1>
-            <p style="color:#6c757d;font-size:.9rem">
+            <h1 style="font-size:1.35rem;font-weight:700;margin-bottom:.25rem">Review Transactions</h1>
+            <p style="color:var(--muted);font-size:.9rem">
                 {{.Import.Bank | upper}} — {{.Import.Filename}}{{if .Import.Period}} — {{.Import.Period}}{{end}}
             </p>
         </div>
         <div style="text-align:right">
-            <div style="display:flex;gap:.75rem;margin-bottom:.5rem;font-size:.9rem">
-                <span><strong style="color:#856404">{{.Pending}}</strong> pending</span>
-                <span><strong style="color:#155724">{{.Approved}}</strong> approved</span>
-                <span><strong style="color:#6c757d">{{.Skipped}}</strong> skipped</span>
-                {{if .Duplicate}}<span><strong style="color:#6c757d">{{.Duplicate}}</strong> duplicate</span>{{end}}
+            <div class="stats-bar" style="justify-content:flex-end">
+                <span class="stat-chip"><span class="dot dot-pending"></span><strong>{{.Pending}}</strong> pending</span>
+                <span class="stat-chip"><span class="dot dot-approved"></span><strong>{{.Approved}}</strong> approved</span>
+                <span class="stat-chip"><span class="dot dot-skipped"></span><strong>{{.Skipped}}</strong> skipped</span>
+                {{if .Duplicate}}<span class="stat-chip"><span class="dot dot-duplicate"></span><strong>{{.Duplicate}}</strong> duplicate</span>{{end}}
             </div>
-            <button class="btn btn-success" hx-post="/review/{{.Import.ID}}/push" hx-target="main" hx-swap="innerHTML"
-                {{if gt .Pending 0}}disabled style="opacity:.5;cursor:not-allowed"{{end}}>
-                Push to Actual
+            <button class="btn btn-success btn-cta" hx-post="/review/{{.Import.ID}}/push" hx-target="main" hx-swap="innerHTML"
+                {{if gt .Pending 0}}disabled{{end}}>
+                {{if gt .Pending 0}}✕ {{.Pending}} pending{{else}}Push to Actual{{end}}
             </button>
         </div>
     </div>
 
-    <div style="display:flex;gap:.5rem;margin-bottom:1rem">
-        <label style="font-size:.85rem;display:flex;align-items:center;gap:.25rem;cursor:pointer">
-            <input type="checkbox" x-model="showPending" checked> Pending
-        </label>
-        <label style="font-size:.85rem;display:flex;align-items:center;gap:.25rem;cursor:pointer">
-            <input type="checkbox" x-model="showApproved" checked> Approved
-        </label>
-        <label style="font-size:.85rem;display:flex;align-items:center;gap:.25rem;cursor:pointer">
-            <input type="checkbox" x-model="showSkipped"> Skipped
-        </label>
-        <label style="font-size:.85rem;display:flex;align-items:center;gap:.25rem;cursor:pointer">
-            <input type="checkbox" x-model="showDuplicate"> Duplicate
-        </label>
-        <span style="color:#dee2e6;margin:0 .25rem">|</span>
-        <label style="font-size:.85rem;display:flex;align-items:center;gap:.25rem;cursor:pointer">
-            <input type="checkbox" x-model="filterCredits"> Credits only
-        </label>
-        <label style="font-size:.85rem;display:flex;align-items:center;gap:.25rem;cursor:pointer">
-            <input type="checkbox" x-model="filterDebits"> Debits only
-        </label>
+    <div class="toggle-group" style="margin-bottom:1.25rem">
+        <label><input type="checkbox" x-model="showPending" checked> Pending</label>
+        <label><input type="checkbox" x-model="showApproved" checked> Approved</label>
+        <label><input type="checkbox" x-model="showSkipped"> Skipped</label>
+        <label><input type="checkbox" x-model="showDuplicate"> Duplicate</label>
+        <span class="toggle-divider">|</span>
+        <label><input type="checkbox" x-model="filterCredits"> Credits</label>
+        <label><input type="checkbox" x-model="filterDebits"> Debits</label>
     </div>
 
     {{range .Groups}}
     <div style="margin-bottom:1.5rem">
-        <h3 style="margin-bottom:.5rem;color:#495057;border-bottom:1px solid #dee2e6;padding-bottom:.25rem">{{displayDate .Date}}</h3>
+        <h3 style="margin-bottom:.5rem;font-size:.9rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">{{displayDate .Date}}</h3>
         {{range .Transactions}}
         <div class="tx-row" id="tx-{{.Transaction.ID}}" data-import-id="{{$.Import.ID}}" data-tx-id="{{.Transaction.ID}}"
             {{if eq .Transaction.Status "pending"}}data-pending{{end}}
@@ -215,31 +196,30 @@
                 (showDuplicate && '{{.Transaction.Status}}' === 'duplicate')
             "
             :class="{ 'focused-row': focusedId === 'tx-{{.Transaction.ID}}' }"
-            style="display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;border-bottom:1px solid #f0f0f0;
+            style="display:flex;align-items:center;gap:.75rem;
                 {{if eq .Transaction.Status "approved"}}background:#f0fdf4;{{end}}
                 {{if eq .Transaction.Status "skipped"}}opacity:.5;{{end}}
                 {{if eq .Transaction.Status "duplicate"}}opacity:.4;{{end}}"
         >
-            <span style="min-width:5rem;font-size:.85rem;color:#6c757d">{{.Transaction.Date}}</span>
-            <div style="flex:1;min-width:0">
-                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem">{{.Transaction.Description}}</div>
-                {{if .Transaction.Notes}}<div style="font-size:.8rem;color:#6c757d">{{.Transaction.Notes}}</div>{{end}}
+            <span class="tx-date">{{.Transaction.Date}}</span>
+            <div class="tx-desc">
+                <div class="tx-desc-main">{{.Transaction.Description}}</div>
+                {{if .Transaction.Notes}}<div class="tx-desc-note">{{.Transaction.Notes}}</div>{{end}}
             </div>
-            <span style="min-width:8rem;text-align:right;font-weight:600;font-size:.9rem"
-                class="{{if lt .Transaction.Amount 0}}amount-debit{{else}}amount-credit{{end}}">
+            <span class="tx-amount {{if lt .Transaction.Amount 0}}amount-debit{{else}}amount-credit{{end}}">
                 {{rp .Transaction.Amount}}
             </span>
-            <span style="min-width:1rem;font-size:.85rem;color:#6c757d">{{.Transaction.Time}}</span>
+            <span class="tx-time">{{.Transaction.Time}}</span>
 
             {{if eq .Transaction.Status "pending"}}
-            <form style="display:flex;gap:.25rem;align-items:center">
+            <form class="tx-actions">
                 <select name="category_id"
                     hx-post="/review/{{$.Import.ID}}/approve"
                     hx-trigger="change"
                     hx-target="#tx-{{.Transaction.ID}}"
                     hx-swap="outerHTML"
                     hx-vals='{"tx_id":"{{.Transaction.ID}}"}'
-                    style="padding:.3rem;border:1px solid #ced4da;border-radius:4px;font-size:.8rem;max-width:140px">
+                    class="form-control" style="padding:.3rem .5rem;font-size:.8rem;max-width:150px;min-width:120px">
                     <option value="">Category…</option>
                     {{$txCatID := .Transaction.CategoryID}}
                     {{if eq $txCatID ""}}{{$txCatID = suggestCatID .Transaction.Description $.Categories}}{{end}}
@@ -247,7 +227,7 @@
                     <option value="{{.ID}}"{{if eq .ID $txCatID}} selected{{end}}>{{.Name}}</option>
                     {{end}}
                 </select>
-                <button type="button" class="btn btn-secondary"
+                <button type="button" class="btn btn-ghost"
                     style="padding:.25rem .5rem;font-size:.75rem"
                     hx-post="/review/{{$.Import.ID}}/skip"
                     hx-vals='{"tx_id":"{{.Transaction.ID}}"}'
@@ -255,11 +235,11 @@
                     hx-swap="outerHTML">Skip</button>
             </form>
             {{else if eq .Transaction.Status "approved"}}
-            <span style="color:#198754;font-size:.8rem;font-weight:500">✓ {{catName .Transaction.CategoryID $.Categories}}</span>
+            <span class="tx-status" style="color:var(--success)">✓ {{catName .Transaction.CategoryID $.Categories}}</span>
             {{else if eq .Transaction.Status "skipped"}}
-            <span style="color:#6c757d;font-size:.8rem">✗ Skipped</span>
+            <span class="tx-status" style="color:var(--muted)">✗ Skipped</span>
             {{else if eq .Transaction.Status "duplicate"}}
-            <span style="color:#6c757d;font-size:.8rem">Duplicate</span>
+            <span class="tx-status" style="color:var(--muted)">Duplicate</span>
             {{end}}
         </div>
         {{end}}
@@ -273,30 +253,29 @@
 <div class="tx-row" id="tx-{{.Transaction.ID}}" data-import-id="{{.Transaction.ImportID}}" data-tx-id="{{.Transaction.ID}}"
     {{if eq .Transaction.Status "pending"}}data-pending{{end}}
     :class="{ 'focused-row': focusedId === 'tx-{{.Transaction.ID}}' }"
-    style="display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;border-bottom:1px solid #f0f0f0;
-        {{if eq .Transaction.Status "approved"}}background:#f0fdf4;{{end}}
-        {{if eq .Transaction.Status "skipped"}}opacity:.5;{{end}}
-        {{if eq .Transaction.Status "duplicate"}}opacity:.4;{{end}}"
+    style="display:flex;align-items:center;gap:.75rem;
+        {{if eq .Transaction.Status 'approved'}}background:#f0fdf4;{{end}}
+        {{if eq .Transaction.Status 'skipped'}}opacity:.5;{{end}}
+        {{if eq .Transaction.Status 'duplicate'}}opacity:.4;{{end}}"
 >
-    <span style="min-width:5rem;font-size:.85rem;color:#6c757d">{{.Transaction.Date}}</span>
-    <div style="flex:1;min-width:0">
-        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem">{{.Transaction.Description}}</div>
-        {{if .Transaction.Notes}}<div style="font-size:.8rem;color:#6c757d">{{.Transaction.Notes}}</div>{{end}}
+    <span class="tx-date">{{.Transaction.Date}}</span>
+    <div class="tx-desc">
+        <div class="tx-desc-main">{{.Transaction.Description}}</div>
+        {{if .Transaction.Notes}}<div class="tx-desc-note">{{.Transaction.Notes}}</div>{{end}}
     </div>
-    <span style="min-width:8rem;text-align:right;font-weight:600;font-size:.9rem"
-        class="{{if lt .Transaction.Amount 0}}amount-debit{{else}}amount-credit{{end}}">
+    <span class="tx-amount {{if lt .Transaction.Amount 0}}amount-debit{{else}}amount-credit{{end}}">
         {{rp .Transaction.Amount}}
     </span>
 
     {{if eq .Transaction.Status "pending"}}
-    <form style="display:flex;gap:.25rem;align-items:center">
+    <form class="tx-actions">
         <select name="category_id"
             hx-post="/review/{{.Transaction.ImportID}}/approve"
             hx-trigger="change"
             hx-target="#tx-{{.Transaction.ID}}"
             hx-swap="outerHTML"
             hx-vals='{"tx_id":"{{.Transaction.ID}}"}'
-            style="padding:.3rem;border:1px solid #ced4da;border-radius:4px;font-size:.8rem;max-width:140px">
+            class="form-control" style="padding:.3rem .5rem;font-size:.8rem;max-width:150px;min-width:120px">
             <option value="">Category…</option>
             {{$txCatID := .Transaction.CategoryID}}
             {{if eq $txCatID ""}}{{$txCatID = suggestCatID .Transaction.Description .Categories}}{{end}}
@@ -304,7 +283,7 @@
             <option value="{{.ID}}"{{if eq .ID $txCatID}} selected{{end}}>{{.Name}}</option>
             {{end}}
         </select>
-        <button type="button" class="btn btn-secondary"
+        <button type="button" class="btn btn-ghost"
             style="padding:.25rem .5rem;font-size:.75rem"
             hx-post="/review/{{.Transaction.ImportID}}/skip"
             hx-vals='{"tx_id":"{{.Transaction.ID}}"}'
@@ -312,11 +291,11 @@
             hx-swap="outerHTML">Skip</button>
     </form>
     {{else if eq .Transaction.Status "approved"}}
-    <span style="color:#198754;font-size:.8rem;font-weight:500">✓ {{catName .Transaction.CategoryID .Categories}}</span>
+    <span class="tx-status" style="color:var(--success)">✓ {{catName .Transaction.CategoryID .Categories}}</span>
     {{else if eq .Transaction.Status "skipped"}}
-    <span style="color:#6c757d;font-size:.8rem">✗ Skipped</span>
+    <span class="tx-status" style="color:var(--muted)">✗ Skipped</span>
     {{else if eq .Transaction.Status "duplicate"}}
-    <span style="color:#6c757d;font-size:.8rem">Duplicate</span>
+    <span class="tx-status" style="color:var(--muted)">Duplicate</span>
     {{end}}
 </div>
 {{end}}
