@@ -88,6 +88,18 @@ var tmplFuncs = template.FuncMap{
 		}
 		return ""
 	},
+	"suggestCatID": func(description string, cats []Category) string {
+		name := SuggestCategory(description)
+		if name == "" {
+			return ""
+		}
+		for _, c := range cats {
+			if c.Name == name {
+				return c.ID
+			}
+		}
+		return ""
+	},
 	"abs": func(n int64) int64 {
 		if n < 0 {
 			return -n

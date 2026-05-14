@@ -167,6 +167,7 @@
                     style="padding:.3rem;border:1px solid #ced4da;border-radius:4px;font-size:.8rem;max-width:140px">
                     <option value="">Category…</option>
                     {{$txCatID := .Transaction.CategoryID}}
+                    {{if eq $txCatID ""}}{{$txCatID = suggestCatID .Transaction.Description $.Categories}}{{end}}
                     {{range $.Categories}}
                     <option value="{{.ID}}"{{if eq .ID $txCatID}} selected{{end}}>{{.Name}}</option>
                     {{end}}
@@ -221,6 +222,7 @@
             style="padding:.3rem;border:1px solid #ced4da;border-radius:4px;font-size:.8rem;max-width:140px">
             <option value="">Category…</option>
             {{$txCatID := .Transaction.CategoryID}}
+            {{if eq $txCatID ""}}{{$txCatID = suggestCatID .Transaction.Description .Categories}}{{end}}
             {{range .Categories}}
             <option value="{{.ID}}"{{if eq .ID $txCatID}} selected{{end}}>{{.Name}}</option>
             {{end}}
