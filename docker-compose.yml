@@ -1,5 +1,6 @@
 services:
   app:
+    container_name: banktoactual
     build: .
     env_file: .env
     environment:
@@ -7,11 +8,12 @@ services:
       - SQLITE_PATH=/app/data/banktoactual.db
       - UPLOAD_DIR=/app/uploads
       - ACTUAL_API_URL=http://actual-http-api:5007
-    ports:
-      - "127.0.0.1:8080:8080"
     volumes:
       - db-data:/app/data
       - uploads:/app/uploads
+    networks:
+      - internal
+      - proxy
     depends_on:
       - actual-http-api
     restart: unless-stopped
@@ -19,8 +21,15 @@ services:
   actual-http-api:
     image: jhonderson/actual-http-api:latest
     env_file: .env
+    networks:
+      - internal
     restart: unless-stopped
 
 volumes:
   db-data:
   uploads:
+
+networks:
+  internal:
+  proxy:
+    external: true

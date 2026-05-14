@@ -107,7 +107,7 @@ type settingsPageData struct {
 }
 
 func fetchActualAccounts() ([]ActualAccount, error) {
-	req, err := http.NewRequest("GET", cfg.ActualAPIURL+"/accounts", nil)
+	req, err := http.NewRequest("GET", cfg.ActualAPIURL+"/v1/budgets/"+cfg.ActualBudgetSyncID+"/accounts", nil)
 	if err != nil {
 		return nil, err
 	}

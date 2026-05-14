@@ -140,12 +140,14 @@ func handlePush(w http.ResponseWriter, r *http.Request) {
 }
 
 func pushTransaction(accountID string, payload actualTxPayload) error {
-	body, err := json.Marshal(payload)
+	body, err := json.Marshal(struct {
+		Transaction actualTxPayload `json:"transaction"`
+	}{Transaction: payload})
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	url := cfg.ActualAPIURL + "/transactions/" + accountID
+	url := cfg.ActualAPIURL + "/v1/budgets/" + cfg.ActualBudgetSyncID + "/accounts/" + accountID + "/transactions"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
