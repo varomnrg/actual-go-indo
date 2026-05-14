@@ -1,0 +1,129 @@
+{{define "settingsPage"}}
+{{template "pageStart" .}}
+<h1 style="margin-bottom:1.5rem">Settings</h1>
+
+{{if .Error}}
+<div style="background:#f8d7da;border:1px solid #f5c2c7;color:#842029;padding:.75rem 1rem;border-radius:4px;margin-bottom:1.5rem">
+    {{if eq .Error "duplicate"}}
+        A mapping for that bank / identifier already exists.
+    {{else if eq .Error "missing-fields"}}
+        All fields are required.
+    {{else if eq .Error "db-error"}}
+        Database error — please try again.
+    {{else if eq .Error "save-failed"}}
+        Failed to save the mapping — please try again.
+    {{else}}
+        An error occurred: {{.Error}}
+    {{end}}
+</div>
+{{end}}
+
+<section style="margin-bottom:2rem">
+    <h2 style="margin-bottom:1rem;font-size:1.1rem">Dependency Status</h2>
+    <table style="border-collapse:collapse;width:100%;max-width:600px">
+        <thead>
+            <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6">
+                <th style="padding:.5rem .75rem;text-align:left">Dependency</th>
+                <th style="padding:.5rem .75rem;text-align:left">Status</th>
+                <th style="padding:.5rem .75rem;text-align:left">Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom:1px solid #dee2e6">
+                <td style="padding:.5rem .75rem">pdftotext</td>
+                <td style="padding:.5rem .75rem">
+                    {{if .PdfToText}}
+                    <span style="color:#198754;font-weight:600">Found</span>
+                    {{else}}
+                    <span style="color:#dc3545;font-weight:600">Not found</span>
+                    {{end}}
+                </td>
+                <td style="padding:.5rem .75rem;color:#6c757d;font-size:.875rem">
+                    {{if not .PdfToText}}
+                    Install: <code>apt install poppler-utils</code> or <code>brew install poppler</code>
+                    {{end}}
+                </td>
+            </tr>
+            <tr style="border-bottom:1px solid #dee2e6">
+                <td style="padding:.5rem .75rem">Actual API</td>
+                <td style="padding:.5rem .75rem">
+                    {{if .ActualReachable}}
+                    <span style="color:#198754;font-weight:600">Reachable</span>
+                    {{else}}
+                    <span style="color:#dc3545;font-weight:600">Unreachable</span>
+                    {{end}}
+                </td>
+                <td style="padding:.5rem .75rem;color:#6c757d;font-size:.875rem">
+                    {{if not .ActualReachable}}
+                    Check <code>ACTUAL_API_URL</code> and <code>ACTUAL_API_KEY</code> in your <code>.env</code>
+                    {{end}}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section style="margin-bottom:2rem">
+    <h2 style="margin-bottom:1rem;font-size:1.1rem">Account Mappings</h2>
+    {{if .Accounts}}
+    <table style="border-collapse:collapse;width:100%;max-width:800px;margin-bottom:1.5rem">
+        <thead>
+            <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6">
+                <th style="padding:.5rem .75rem;text-align:left">Bank</th>
+                <th style="padding:.5rem .75rem;text-align:left">Identifier</th>
+                <th style="padding:.5rem .75rem;text-align:left">Actual Account ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Accounts}}
+            <tr style="border-bottom:1px solid #dee2e6">
+                <td style="padding:.5rem .75rem">{{.Bank}}</td>
+                <td style="padding:.5rem .75rem">{{.Identifier}}</td>
+                <td style="padding:.5rem .75rem;font-family:monospace;font-size:.875rem">{{.ActualAccountID}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p style="color:#6c757d;margin-bottom:1.5rem">No mappings yet.</p>
+    {{end}}
+
+    <h3 style="margin-bottom:.75rem;font-size:1rem">Add Mapping</h3>
+    <form method="POST" action="/settings/accounts" style="max-width:480px">
+        <div style="margin-bottom:1rem">
+            <label for="bank" style="display:block;margin-bottom:.25rem;font-weight:500">Bank</label>
+            <select id="bank" name="bank" required style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px">
+                <option value="">Select bank…</option>
+                <option value="bca">BCA</option>
+                <option value="mandiri">Mandiri</option>
+                <option value="jago">Jago</option>
+            </select>
+        </div>
+        <div style="margin-bottom:1rem">
+            <label for="identifier" style="display:block;margin-bottom:.25rem;font-weight:500">Identifier</label>
+            <input type="text" id="identifier" name="identifier" required
+                style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px"
+                placeholder="Account number (BCA/Mandiri) or pocket name (Jago)">
+            <small style="color:#6c757d">BCA/Mandiri: account number. Jago: pocket name (e.g. Main, Visa, Wallet).</small>
+        </div>
+        <div style="margin-bottom:1rem">
+            <label for="actual_account_id" style="display:block;margin-bottom:.25rem;font-weight:500">Actual Account</label>
+            {{if .ActualAccounts}}
+            <select id="actual_account_id" name="actual_account_id" required style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px">
+                <option value="">Select account…</option>
+                {{range .ActualAccounts}}
+                <option value="{{.ID}}">{{.Name}}</option>
+                {{end}}
+            </select>
+            {{else}}
+            <input type="text" id="actual_account_id" name="actual_account_id" required
+                style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px"
+                placeholder="Actual account UUID">
+            <small style="color:#dc3545">Could not fetch accounts from Actual API — enter UUID manually.</small>
+            {{end}}
+        </div>
+        <button type="submit" class="btn btn-primary">Add Mapping</button>
+    </form>
+</section>
+{{template "pageEnd" .}}
+{{end}}

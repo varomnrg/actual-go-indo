@@ -1,0 +1,54 @@
+{{define "historyPage"}}
+{{template "pageStart" .}}
+<h1 style="margin-bottom:1.5rem">Import History</h1>
+{{if .Imports}}
+<table style="width:100%;border-collapse:collapse">
+    <thead>
+        <tr style="text-align:left;border-bottom:2px solid #dee2e6">
+            <th style="padding:.5rem">Date</th>
+            <th style="padding:.5rem">Bank</th>
+            <th style="padding:.5rem">Period</th>
+            <th style="padding:.5rem">Filename</th>
+            <th style="padding:.5rem">Status</th>
+            <th style="padding:.5rem">Transactions</th>
+            <th style="padding:.5rem">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Imports}}
+        <tr style="border-bottom:1px solid #dee2e6">
+            <td style="padding:.5rem">{{displayDate (.CreatedAt.Format "2006-01-02")}}</td>
+            <td style="padding:.5rem">{{.Bank}}</td>
+            <td style="padding:.5rem">{{.Period}}</td>
+            <td style="padding:.5rem">{{.Filename}}</td>
+            <td style="padding:.5rem">
+                <span style="
+                    display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.8rem;
+                    {{if eq .Status "pending"}}background:#fff3cd;color:#856404{{end}}
+                    {{if eq .Status "parsing"}}background:#cce5ff;color:#004085{{end}}
+                    {{if eq .Status "done"}}background:#d4edda;color:#155724{{end}}
+                    {{if eq .Status "error"}}background:#f8d7da;color:#721c24{{end}}
+                ">{{.Status}}</span>
+            </td>
+            <td style="padding:.5rem">
+                {{.TxCount}} total
+                {{if .PendingCount}}<span style="color:#856404">({{.PendingCount}} pending)</span>{{end}}
+                {{if .ApprovedCount}}<span style="color:#155724">({{.ApprovedCount}} approved)</span>{{end}}
+            </td>
+            <td style="padding:.5rem">
+                <a href="/review/{{.ID}}" class="btn btn-primary" style="font-size:.8rem">View</a>
+                {{if eq .Status "error"}}
+                <form method="POST" action="/import/{{.ID}}/retry" style="display:inline">
+                    <button type="submit" class="btn btn-secondary" style="font-size:.8rem">Retry</button>
+                </form>
+                {{end}}
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p>No imports yet.</p>
+{{end}}
+{{template "pageEnd" .}}
+{{end}}

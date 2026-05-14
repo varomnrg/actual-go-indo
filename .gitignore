@@ -1,1 +1,6 @@
 PLAN.md
+.scratch
+.env
+*.db
+uploads/
+actual-go-indo

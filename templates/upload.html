@@ -1,0 +1,30 @@
+{{define "uploadPage"}}
+{{template "pageStart" .}}
+<h1 style="margin-bottom:1.5rem">Upload Bank Statement</h1>
+<form method="POST" action="/upload" enctype="multipart/form-data" style="max-width:480px">
+    <div style="margin-bottom:1rem">
+        <label for="bank" style="display:block;margin-bottom:.25rem;font-weight:500">Bank</label>
+        <select id="bank" name="bank" required style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px">
+            <option value="">Select bank…</option>
+            <option value="bca">BCA</option>
+            <option value="mandiri">Mandiri</option>
+            <option value="jago">Jago</option>
+        </select>
+    </div>
+    <div id="password-field" style="margin-bottom:1rem;display:none">
+        <label for="password" style="display:block;margin-bottom:.25rem;font-weight:500">Password (Mandiri XLSX)</label>
+        <input type="password" id="password" name="password" style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px" placeholder="DDMMYYYY">
+    </div>
+    <div style="margin-bottom:1rem">
+        <label for="file" style="display:block;margin-bottom:.25rem;font-weight:500">File</label>
+        <input type="file" id="file" name="file" required accept=".pdf,.xlsx" style="width:100%">
+    </div>
+    <button type="submit" class="btn btn-primary">Upload &amp; Parse</button>
+</form>
+<script>
+document.getElementById('bank').addEventListener('change', function() {
+    document.getElementById('password-field').style.display = this.value === 'mandiri' ? 'block' : 'none';
+});
+</script>
+{{template "pageEnd" .}}
+{{end}}

@@ -1,0 +1,43 @@
+{{define "pageStart"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BankToActual</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background: #f8f9fa; color: #212529; }
+        nav { background: #fff; border-bottom: 1px solid #dee2e6; padding: 0.75rem 1.5rem; display: flex; gap: 1.5rem; align-items: center; }
+        nav a { text-decoration: none; color: #495057; font-weight: 500; }
+        nav a:hover { color: #212529; }
+        nav .brand { font-weight: 700; color: #212529; }
+        main { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        .btn { display: inline-block; padding: 0.5rem 1rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500; text-decoration: none; }
+        .btn-primary { background: #0d6efd; color: #fff; }
+        .btn-primary:hover { background: #0b5ed7; }
+        .btn-secondary { background: #6c757d; color: #fff; }
+        .btn-danger { background: #dc3545; color: #fff; }
+        .btn-success { background: #198754; color: #fff; }
+        .amount-credit { color: #198754; font-weight: 600; }
+        .amount-debit { color: #dc3545; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="brand">BankToActual</span>
+        <a href="/upload">Upload</a>
+        <a href="/review">Review</a>
+        <a href="/history">History</a>
+        <a href="/settings">Settings</a>
+    </nav>
+    <main>
+{{end}}
+
+{{define "pageEnd"}}
+    </main>
+</body>
+</html>
+{{end}}
