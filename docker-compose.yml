@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - db-data:/app/data
+      - uploads:/app/uploads
+    depends_on:
+      - actual-http-api
+    restart: unless-stopped
+
+  actual-http-api:
+    image: jhonderson/actual-http-api:latest
+    env_file: .env
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads:
