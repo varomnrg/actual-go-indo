@@ -254,9 +254,9 @@
     {{if eq .Transaction.Status "pending"}}data-pending{{end}}
     :class="{ 'focused-row': focusedId === 'tx-{{.Transaction.ID}}' }"
     style="display:flex;align-items:center;gap:.75rem;
-        {{if eq .Transaction.Status 'approved'}}background:#f0fdf4;{{end}}
-        {{if eq .Transaction.Status 'skipped'}}opacity:.5;{{end}}
-        {{if eq .Transaction.Status 'duplicate'}}opacity:.4;{{end}}"
+        {{if eq .Transaction.Status "approved"}}background:#f0fdf4;{{end}}
+        {{if eq .Transaction.Status "skipped"}}opacity:.5;{{end}}
+        {{if eq .Transaction.Status "duplicate"}}opacity:.4;{{end}}"
 >
     <span class="tx-date">{{.Transaction.Date}}</span>
     <div class="tx-desc">
