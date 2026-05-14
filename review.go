@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -19,10 +20,11 @@ type reviewListData struct {
 
 type importWithCount struct {
 	Import
-	PendingCount  int
-	ApprovedCount int
-	SkippedCount  int
-	DuplicateCount int
+	PendingCount    int
+	ApprovedCount   int
+	SkippedCount    int
+	DuplicateCount  int
+	ReimportWarning bool
 }
 
 type reviewDetailData struct {
@@ -345,6 +347,15 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	seen := map[string]bool{}
+	for i := range data.Imports {
+		key := data.Imports[i].Bank + "|" + data.Imports[i].Filename + "|" + data.Imports[i].Period
+		if seen[key] {
+			data.Imports[i].ReimportWarning = true
+		}
+		seen[key] = true
+	}
+
 	if err := tmpl.ExecuteTemplate(w, "historyPage", data); err != nil {
 		log.Printf("render history: %v", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
@@ -458,11 +469,24 @@ func replaceImportTransactions(db *sql.DB, importID string, txs []Transaction) e
 	if _, err := db.Exec(`DELETE FROM transactions WHERE import_id=?`, importID); err != nil {
 		return fmt.Errorf("delete old transactions: %w", err)
 	}
+
+	imp, err := getImport(db, importID)
+	if err != nil {
+		return fmt.Errorf("get import: %w", err)
+	}
+
 	for i := range txs {
 		txs[i].ImportID = importID
 		exists, err := referenceIDExists(db, txs[i].ReferenceID)
 		if err != nil {
 			return err
+		}
+		if !exists && txs[i].ReferenceID == "" {
+			descHash := fmt.Sprintf("%x", sha1.Sum([]byte(txs[i].Description)))
+			exists, err = descriptionHashExists(db, importID, imp.Bank, txs[i].Date, txs[i].Amount, descHash)
+			if err != nil {
+				return err
+			}
 		}
 		if exists {
 			txs[i].Status = "duplicate"
@@ -552,6 +576,13 @@ func handleUploadSubmit(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("check ref id: %v", err)
 			continue
+		}
+		if !exists && txs[i].ReferenceID == "" {
+			descHash := fmt.Sprintf("%x", sha1.Sum([]byte(txs[i].Description)))
+			exists, err = descriptionHashExists(db, impID, bank, txs[i].Date, txs[i].Amount, descHash)
+			if err != nil {
+				log.Printf("check desc hash: %v", err)
+			}
 		}
 		if exists {
 			txs[i].Status = "duplicate"

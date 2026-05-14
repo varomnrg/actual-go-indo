@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"database/sql"
 	"fmt"
 	"time"
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     amount              INTEGER NOT NULL,
     balance             INTEGER NOT NULL DEFAULT 0,
     reference_id        TEXT NOT NULL DEFAULT '',
+    description_hash    TEXT NOT NULL DEFAULT '',
     category_id         TEXT NOT NULL DEFAULT '',
     transfer_to_account TEXT NOT NULL DEFAULT '',
     status              TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'skipped', 'duplicate')),
@@ -109,7 +111,37 @@ func openDB(path string) (*sql.DB, error) {
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("run schema: %w", err)
 	}
+	if err := runMigrations(db); err != nil {
+		return nil, fmt.Errorf("run migrations: %w", err)
+	}
 	return db, nil
+}
+
+func runMigrations(db *sql.DB) error {
+	rows, err := db.Query(`PRAGMA table_info(transactions)`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	var hasDescHash bool
+	for rows.Next() {
+		var cid, notNull, pk int
+		var name, colType string
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &colType, &notNull, &dflt, &pk); err != nil {
+			return err
+		}
+		if name == "description_hash" {
+			hasDescHash = true
+		}
+	}
+	if !hasDescHash {
+		_, err := db.Exec(`ALTER TABLE transactions ADD COLUMN description_hash TEXT NOT NULL DEFAULT ''`)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // --- imports ---
@@ -166,13 +198,14 @@ func listImports(db *sql.DB) ([]Import, error) {
 // --- transactions ---
 
 func insertTransaction(db *sql.DB, tx *Transaction) (string, error) {
+	descHash := fmt.Sprintf("%x", sha1.Sum([]byte(tx.Description)))
 	var id string
 	err := db.QueryRow(`
-		INSERT INTO transactions (import_id, date, time, description, notes, amount, balance, reference_id, category_id, transfer_to_account, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO transactions (import_id, date, time, description, notes, amount, balance, reference_id, description_hash, category_id, transfer_to_account, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		RETURNING id`,
 		tx.ImportID, tx.Date, tx.Time, tx.Description, tx.Notes,
-		tx.Amount, tx.Balance, tx.ReferenceID, tx.CategoryID, tx.TransferToAccount, tx.Status,
+		tx.Amount, tx.Balance, tx.ReferenceID, descHash, tx.CategoryID, tx.TransferToAccount, tx.Status,
 	).Scan(&id)
 	return id, err
 }
@@ -207,6 +240,20 @@ func updateTransactionStatus(db *sql.DB, id, status, categoryID string) error {
 func referenceIDExists(db *sql.DB, referenceID string) (bool, error) {
 	var count int
 	err := db.QueryRow(`SELECT COUNT(1) FROM transactions WHERE reference_id=? AND reference_id != ''`, referenceID).Scan(&count)
+	return count > 0, err
+}
+
+func descriptionHashExists(db *sql.DB, importID, bank, date string, amount int64, descHash string) (bool, error) {
+	var count int
+	err := db.QueryRow(`
+		SELECT COUNT(1) FROM transactions t
+		JOIN imports i ON i.id = t.import_id
+		WHERE t.import_id != ?
+		  AND i.bank = ?
+		  AND t.date = ?
+		  AND t.amount = ?
+		  AND t.description_hash = ?
+	`, importID, bank, date, amount, descHash).Scan(&count)
 	return count > 0, err
 }
 

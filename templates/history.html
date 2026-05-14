@@ -20,7 +20,10 @@
             <td style="padding:.5rem">{{displayDate (.CreatedAt.Format "2006-01-02")}}</td>
             <td style="padding:.5rem">{{.Bank}}</td>
             <td style="padding:.5rem">{{.Period}}</td>
-            <td style="padding:.5rem">{{.Filename}}</td>
+            <td style="padding:.5rem">
+                {{.Filename}}
+                {{if .ReimportWarning}}<span style="color:#721c24;background:#f8d7da;padding:0.05rem .35rem;border-radius:4px;font-size:.75rem;margin-left:.3rem" title="This file+period was imported more than once">re-import</span>{{end}}
+            </td>
             <td style="padding:.5rem">
                 <span style="
                     display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.8rem;
