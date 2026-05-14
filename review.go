@@ -35,6 +35,7 @@ type reviewDetailData struct {
 	Duplicate  int
 	PushError  string
 	PushResult string
+	Warning    string
 }
 
 type dateGroup struct {
@@ -145,6 +146,14 @@ func handleReviewDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := buildReviewData(*imp, txs, cats, "", "")
+	if imp.Account != "" {
+		if _, mappingErr := getBankAccount(db, imp.Bank, imp.Account); mappingErr == sql.ErrNoRows {
+			data.Warning = fmt.Sprintf(
+				"Account %q (%s) has no mapping. Go to /settings to add one before pushing.",
+				imp.Account, imp.Bank,
+			)
+		}
+	}
 	if err := tmpl.ExecuteTemplate(w, "reviewDetail", data); err != nil {
 		log.Printf("render review detail: %v", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
@@ -392,11 +401,27 @@ func handleRetry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "mandiri":
-		http.Error(w, "mandiri retry not implemented", http.StatusNotImplemented)
-		return
+		password := r.FormValue("password")
+		txs, account, period, err = ParseMandiri(imp.FilePath, password)
+		if err != nil {
+			updateImportStatus(db, importID, "error", err.Error(), 0)
+			http.Redirect(w, r, "/review/"+importID, http.StatusSeeOther)
+			return
+		}
 	case "jago":
-		http.Error(w, "jago retry not implemented", http.StatusNotImplemented)
-		return
+		f, err := os.Open(imp.FilePath)
+		if err != nil {
+			updateImportStatus(db, importID, "error", err.Error(), 0)
+			http.Redirect(w, r, "/review/"+importID, http.StatusSeeOther)
+			return
+		}
+		defer f.Close()
+		txs, account, period, err = ParseJago(f)
+		if err != nil {
+			updateImportStatus(db, importID, "error", err.Error(), 0)
+			http.Redirect(w, r, "/review/"+importID, http.StatusSeeOther)
+			return
+		}
 	default:
 		http.Error(w, "unknown bank", http.StatusBadRequest)
 		return
@@ -493,7 +518,7 @@ func handleUploadSubmit(w http.ResponseWriter, r *http.Request) {
 		txs, account, period, parseErr = ParseBCA(reopened)
 	case "mandiri":
 		password := r.FormValue("password")
-		txs, account, period, parseErr = ParseMandiri(reopened, password)
+		txs, account, period, parseErr = ParseMandiri(savedPath, password)
 	case "jago":
 		txs, account, period, parseErr = ParseJago(reopened)
 	default:

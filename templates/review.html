@@ -65,6 +65,26 @@
         {{.PushError}}
     </div>
     {{end}}
+    {{if .Warning}}
+    <div style="background:#fff3cd;color:#856404;padding:.75rem 1rem;border-radius:4px;margin-bottom:1rem">
+        {{.Warning}}
+    </div>
+    {{end}}
+    {{if eq .Import.Status "error"}}
+    <div style="background:#f8d7da;color:#721c24;padding:.75rem 1rem;border-radius:4px;margin-bottom:.75rem">
+        <strong>Parse error:</strong> {{.Import.ErrorMsg}}
+    </div>
+    <form method="POST" action="/import/{{.Import.ID}}/retry" style="margin-bottom:1.5rem;display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap">
+        {{if eq .Import.Bank "mandiri"}}
+        <div>
+            <label style="display:block;font-size:.85rem;margin-bottom:.25rem">Password</label>
+            <input type="password" name="password" placeholder="DDMMYYYY"
+                style="padding:.4rem .6rem;border:1px solid #ced4da;border-radius:4px;font-size:.9rem">
+        </div>
+        {{end}}
+        <button type="submit" class="btn btn-secondary">Retry</button>
+    </form>
+    {{end}}
 
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
         <div>

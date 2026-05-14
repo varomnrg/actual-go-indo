@@ -84,6 +84,10 @@ func handlePush(w http.ResponseWriter, r *http.Request) {
 			payload.Category = actualCatID
 		}
 
+		// TODO(issue-05): when tx.TransferToAccount != "", create a native Actual transfer
+		// instead of a regular transaction (requires looking up both pocket account IDs and
+		// calling the Actual Budget transfer endpoint).
+
 		if err := pushTransaction(bankAccount.ActualAccountID, payload); err != nil {
 			result.Errors++
 			result.ErrorList = append(result.ErrorList, fmt.Sprintf("%s: %v", tx.Description, err))
