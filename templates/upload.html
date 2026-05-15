@@ -1,26 +1,39 @@
 {{define "uploadPage"}}
 {{template "pageStart" .}}
-<h1 style="margin-bottom:1.5rem">Upload Bank Statement</h1>
-<form method="POST" action="/upload" enctype="multipart/form-data" style="max-width:480px">
-    <div style="margin-bottom:1rem">
-        <label for="bank" style="display:block;margin-bottom:.25rem;font-weight:500">Bank</label>
-        <select id="bank" name="bank" required style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px">
-            <option value="">Select bank…</option>
-            <option value="bca">BCA</option>
-            <option value="mandiri">Mandiri</option>
-            <option value="jago">Jago</option>
-        </select>
+<div class="page-header">
+    <h1>Upload Bank Statement</h1>
+    <p>Import transactions from your bank statement PDF or Excel file.</p>
+</div>
+<div style="max-width:520px">
+    <div class="card">
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="bank">Bank</label>
+                <select id="bank" name="bank" required class="form-control">
+                    <option value="">Select bank…</option>
+                    <option value="bca">BCA</option>
+                    <option value="mandiri">Mandiri</option>
+                    <option value="jago">Jago</option>
+                </select>
+            </div>
+            <div id="password-field" class="form-group" style="display:none">
+                <label for="password">Password (Mandiri XLSX)</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="DDMMYYYY">
+                <p class="form-hint">Enter your birth date in DDMMYYYY format</p>
+            </div>
+            <div class="form-group">
+                <label for="file">Statement File</label>
+                <div class="file-drop">
+                    <span class="drop-icon">📎</span>
+                    <span class="drop-text">Drop file here or <strong style="color:var(--accent)">browse</strong></span>
+                    <span class="drop-hint">Supports PDF and XLSX</span>
+                    <input type="file" id="file" name="file" required accept=".pdf,.xlsx">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-cta">Upload &amp; Parse</button>
+        </form>
     </div>
-    <div id="password-field" style="margin-bottom:1rem;display:none">
-        <label for="password" style="display:block;margin-bottom:.25rem;font-weight:500">Password (Mandiri XLSX)</label>
-        <input type="password" id="password" name="password" style="width:100%;padding:.5rem;border:1px solid #ced4da;border-radius:4px" placeholder="DDMMYYYY">
-    </div>
-    <div style="margin-bottom:1rem">
-        <label for="file" style="display:block;margin-bottom:.25rem;font-weight:500">File</label>
-        <input type="file" id="file" name="file" required accept=".pdf,.xlsx" style="width:100%">
-    </div>
-    <button type="submit" class="btn btn-primary">Upload &amp; Parse</button>
-</form>
+</div>
 <script>
 document.getElementById('bank').addEventListener('change', function() {
     document.getElementById('password-field').style.display = this.value === 'mandiri' ? 'block' : 'none';
