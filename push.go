@@ -110,31 +110,8 @@ func handlePush(w http.ResponseWriter, r *http.Request) {
 
 	cats2, _ := listCategories(db)
 	allTxs, _ := listTransactions(db, importID)
-	pending, approved, skipped, duplicate := 0, 0, 0, 0
-	for _, tx := range allTxs {
-		switch tx.Status {
-		case "pending":
-			pending++
-		case "approved":
-			approved++
-		case "skipped":
-			skipped++
-		case "duplicate":
-			duplicate++
-		}
-	}
-
-	data := reviewDetailData{
-		Import:     *imp,
-		Categories: cats2,
-		Groups:     groupByDate(allTxs, cats2),
-		Pending:    pending,
-		Approved:   approved,
-		Skipped:    skipped,
-		Duplicate:  duplicate,
-		PushError:  pushError,
-		PushResult: pushResultStr,
-	}
+	cutoff, _ := getSetting(db, "push_cutoff")
+	data := buildReviewData(*imp, allTxs, cats2, cutoff, pushError, pushResultStr)
 
 	tmpl.ExecuteTemplate(w, "reviewDetail", data)
 }

@@ -34,10 +34,12 @@ type reviewDetailData struct {
 	Pending    int
 	Approved   int
 	Skipped    int
-	Duplicate  int
-	PushError  string
-	PushResult string
-	Warning    string
+	Duplicate    int
+	Cutoff       string
+	BeforeCutoff int
+	PushError    string
+	PushResult   string
+	Warning      string
 }
 
 type dateGroup struct {
@@ -46,8 +48,9 @@ type dateGroup struct {
 }
 
 type txRowData struct {
-	Transaction Transaction
-	Categories  []Category
+	Transaction  Transaction
+	Categories   []Category
+	BeforeCutoff bool
 }
 
 var tmplFuncs = template.FuncMap{
@@ -159,7 +162,8 @@ func handleReviewDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := buildReviewData(*imp, txs, cats, "", "")
+	cutoff, _ := getSetting(db, "push_cutoff")
+	data := buildReviewData(*imp, txs, cats, cutoff, "", "")
 	if imp.Account != "" {
 		if _, mappingErr := getBankAccount(db, imp.Bank, imp.Account); mappingErr == sql.ErrNoRows {
 			data.Warning = fmt.Sprintf(
@@ -174,12 +178,17 @@ func handleReviewDetail(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func buildReviewData(imp Import, txs []Transaction, cats []Category, pushError, pushResult string) reviewDetailData {
+func buildReviewData(imp Import, txs []Transaction, cats []Category, cutoff string, pushError, pushResult string) reviewDetailData {
 	pending, approved, skipped, duplicate := 0, 0, 0, 0
+	beforeCutoff := 0
 	for _, tx := range txs {
 		switch tx.Status {
 		case "pending":
-			pending++
+			if cutoff != "" && tx.Date <= cutoff {
+				beforeCutoff++
+			} else {
+				pending++
+			}
 		case "approved":
 			approved++
 		case "skipped":
@@ -189,22 +198,24 @@ func buildReviewData(imp Import, txs []Transaction, cats []Category, pushError, 
 		}
 	}
 
-	groups := groupByDate(txs, cats)
+	groups := groupByDate(txs, cats, cutoff)
 
 	return reviewDetailData{
-		Import:     imp,
-		Categories: cats,
-		Groups:     groups,
-		Pending:    pending,
-		Approved:   approved,
-		Skipped:    skipped,
-		Duplicate:  duplicate,
-		PushError:  pushError,
-		PushResult: pushResult,
+		Import:       imp,
+		Categories:   cats,
+		Groups:       groups,
+		Pending:      pending,
+		Approved:     approved,
+		Skipped:      skipped,
+		Duplicate:    duplicate,
+		Cutoff:       cutoff,
+		BeforeCutoff: beforeCutoff,
+		PushError:    pushError,
+		PushResult:   pushResult,
 	}
 }
 
-func groupByDate(txs []Transaction, cats []Category) []dateGroup {
+func groupByDate(txs []Transaction, cats []Category, cutoff string) []dateGroup {
 	if len(txs) == 0 {
 		return nil
 	}
@@ -218,9 +229,11 @@ func groupByDate(txs []Transaction, cats []Category) []dateGroup {
 			currentDate = tx.Date
 			group = dateGroup{Date: currentDate}
 		}
+		beforeCutoff := cutoff != "" && tx.Date <= cutoff
 		group.Transactions = append(group.Transactions, txRowData{
-			Transaction: tx,
-			Categories:  cats,
+			Transaction:  tx,
+			Categories:   cats,
+			BeforeCutoff: beforeCutoff,
 		})
 	}
 	groups = append(groups, group)
