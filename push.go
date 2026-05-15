@@ -19,11 +19,12 @@ type actualTxPayload struct {
 }
 
 type pushResult struct {
-	Total     int
-	Added     int
-	Updated   int
-	Errors    int
-	ErrorList []string
+	Total        int
+	Added        int
+	Updated      int
+	Errors       int
+	BeforeCutoff int
+	ErrorList    []string
 }
 
 func handlePush(w http.ResponseWriter, r *http.Request) {
@@ -65,12 +66,18 @@ func handlePush(w http.ResponseWriter, r *http.Request) {
 		catMap[c.ID] = c.ActualCatID
 	}
 
+	cutoff, _ := getSetting(db, "push_cutoff")
+
 	result := pushResult{}
 	for _, tx := range txs {
 		if tx.Status != "approved" {
 			continue
 		}
 		result.Total++
+		if cutoff != "" && tx.Date <= cutoff {
+			result.BeforeCutoff++
+			continue
+		}
 
 		amount := tx.Amount * 1000
 		payload := actualTxPayload{
@@ -100,17 +107,21 @@ func handlePush(w http.ResponseWriter, r *http.Request) {
 	if result.Errors > 0 {
 		pushError = fmt.Sprintf("%d errors during push", result.Errors)
 	}
-	pushResultStr = fmt.Sprintf("Pushed: %d added, %d errors", result.Added, result.Errors)
 
-	if result.Total == 0 {
+	switch {
+	case result.Total == 0:
 		pushResultStr = "No approved transactions to push"
+	case result.BeforeCutoff > 0:
+		pushResultStr = fmt.Sprintf("Cutoff %s — %d before cutoff skipped. Pushed: %d added, %d errors",
+			cutoff, result.BeforeCutoff, result.Added, result.Errors)
+	default:
+		pushResultStr = fmt.Sprintf("Pushed: %d added, %d errors", result.Added, result.Errors)
 	}
 
 	updateImportStatus(db, importID, "done", pushError, len(txs))
 
 	cats2, _ := listCategories(db)
 	allTxs, _ := listTransactions(db, importID)
-	cutoff, _ := getSetting(db, "push_cutoff")
 	data := buildReviewData(*imp, allTxs, cats2, cutoff, pushError, pushResultStr)
 
 	tmpl.ExecuteTemplate(w, "reviewDetail", data)
