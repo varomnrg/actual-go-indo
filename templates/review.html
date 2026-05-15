@@ -56,6 +56,7 @@
     showApproved: true,
     showSkipped: false,
     showDuplicate: false,
+    showBeforeCutoff: true,
     filterCredits: false,
     filterDebits: false,
     currentIndex: -1,
@@ -165,6 +166,7 @@
                 <span class="stat-chip"><span class="dot dot-approved"></span><strong>{{.Approved}}</strong> approved</span>
                 <span class="stat-chip"><span class="dot dot-skipped"></span><strong>{{.Skipped}}</strong> skipped</span>
                 {{if .Duplicate}}<span class="stat-chip"><span class="dot dot-duplicate"></span><strong>{{.Duplicate}}</strong> duplicate</span>{{end}}
+                {{if .BeforeCutoff}}<span class="stat-chip"><span class="dot dot-duplicate"></span><strong>{{.BeforeCutoff}}</strong> before cutoff</span>{{end}}
             </div>
             <button class="btn btn-success btn-cta" hx-post="/review/{{.Import.ID}}/push" hx-target="main" hx-swap="innerHTML"
                 {{if gt .Pending 0}}disabled{{end}}>
@@ -173,11 +175,21 @@
         </div>
     </div>
 
+    {{if .Cutoff}}
+    <div class="alert alert-info" style="margin-bottom:1rem;padding:.5rem .75rem;font-size:.85rem">
+        Cutoff: <strong>{{.Cutoff}}</strong>
+        {{if .BeforeCutoff}}
+        — <strong>{{.BeforeCutoff}}</strong> transaction{{if ne .BeforeCutoff 1}}s{{end}} before cutoff will be skipped during push
+        {{end}}
+    </div>
+    {{end}}
+
     <div class="toggle-group" style="margin-bottom:1.25rem">
         <label><input type="checkbox" x-model="showPending" checked> Pending</label>
         <label><input type="checkbox" x-model="showApproved" checked> Approved</label>
         <label><input type="checkbox" x-model="showSkipped"> Skipped</label>
         <label><input type="checkbox" x-model="showDuplicate"> Duplicate</label>
+        <label><input type="checkbox" x-model="showBeforeCutoff" checked> Before cutoff</label>
         <span class="toggle-divider">|</span>
         <label><input type="checkbox" x-model="filterCredits"> Credits</label>
         <label><input type="checkbox" x-model="filterDebits"> Debits</label>
@@ -188,9 +200,10 @@
         <h3 style="margin-bottom:.5rem;font-size:.9rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">{{displayDate .Date}}</h3>
         {{range .Transactions}}
         <div class="tx-row" id="tx-{{.Transaction.ID}}" data-import-id="{{$.Import.ID}}" data-tx-id="{{.Transaction.ID}}"
-            {{if eq .Transaction.Status "pending"}}data-pending{{end}}
+            {{if and (eq .Transaction.Status "pending") (not .BeforeCutoff)}}data-pending{{end}}
             x-show="
-                (showPending && '{{.Transaction.Status}}' === 'pending') ||
+                (showPending && '{{.Transaction.Status}}' === 'pending' && '{{.BeforeCutoff}}' === 'false') ||
+                (showBeforeCutoff && '{{.Transaction.Status}}' === 'pending' && '{{.BeforeCutoff}}' === 'true') ||
                 (showApproved && '{{.Transaction.Status}}' === 'approved') ||
                 (showSkipped && '{{.Transaction.Status}}' === 'skipped') ||
                 (showDuplicate && '{{.Transaction.Status}}' === 'duplicate')
@@ -199,7 +212,8 @@
             style="display:flex;align-items:center;gap:.75rem;
                 {{if eq .Transaction.Status "approved"}}background:#f0fdf4;{{end}}
                 {{if eq .Transaction.Status "skipped"}}opacity:.5;{{end}}
-                {{if eq .Transaction.Status "duplicate"}}opacity:.4;{{end}}"
+                {{if eq .Transaction.Status "duplicate"}}opacity:.4;{{end}}
+                {{if .BeforeCutoff}}opacity:.5;{{end}}"
         >
             <span class="tx-date">{{.Transaction.Date}}</span>
             <div class="tx-desc">
@@ -211,7 +225,9 @@
             </span>
             <span class="tx-time">{{.Transaction.Time}}</span>
 
-            {{if eq .Transaction.Status "pending"}}
+            {{if and (eq .Transaction.Status "pending") .BeforeCutoff}}
+            <span class="tx-status" style="color:var(--muted);font-style:italic">Before cutoff</span>
+            {{else if eq .Transaction.Status "pending"}}
             <form class="tx-actions">
                 <select name="category_id"
                     hx-post="/review/{{$.Import.ID}}/approve"
