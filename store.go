@@ -141,6 +141,21 @@ func runMigrations(db *sql.DB) error {
 			return err
 		}
 	}
+
+	var tblName string
+	err = db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='app_settings'`).Scan(&tblName)
+	if err == sql.ErrNoRows {
+		_, err := db.Exec(`CREATE TABLE IF NOT EXISTS app_settings (
+			key   TEXT PRIMARY KEY,
+			value TEXT NOT NULL DEFAULT ''
+		)`)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -323,4 +338,21 @@ func getBankAccount(db *sql.DB, bank, identifier string) (*BankAccount, error) {
 		return nil, err
 	}
 	return a, nil
+}
+
+func getSetting(db *sql.DB, key string) (string, error) {
+	var value string
+	err := db.QueryRow(`SELECT value FROM app_settings WHERE key=?`, key).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return value, err
+}
+
+func setSetting(db *sql.DB, key, value string) error {
+	_, err := db.Exec(`
+		INSERT INTO app_settings (key, value) VALUES (?, ?)
+		ON CONFLICT(key) DO UPDATE SET value=excluded.value
+	`, key, value)
+	return err
 }
