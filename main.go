@@ -82,6 +82,7 @@ func registerRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("GET /settings", handleSettingsPage)
 	mux.HandleFunc("POST /settings/accounts", handleSaveAccount)
+	mux.HandleFunc("POST /settings/cutoff", handleAdvanceCutoff)
 
 	mux.HandleFunc("GET /api/categories", handleListCategories)
 	mux.HandleFunc("POST /api/categories", handleCreateCategory)
@@ -104,6 +105,7 @@ type settingsPageData struct {
 	PdfToText       bool
 	ActualReachable bool
 	Error           string
+	Cutoff          string
 }
 
 func fetchActualAccounts() ([]ActualAccount, error) {
@@ -131,11 +133,13 @@ func handleSettingsPage(w http.ResponseWriter, r *http.Request) {
 	accounts, _ := listBankAccounts(db)
 	actualAccounts, err := fetchActualAccounts()
 	_, pdfErr := exec.LookPath("pdftotext")
+	cutoff, _ := getSetting(db, "push_cutoff")
 	data := settingsPageData{
 		Accounts:        accounts,
 		ActualAccounts:  actualAccounts,
 		PdfToText:       pdfErr == nil,
 		ActualReachable: err == nil,
+		Cutoff:          cutoff,
 		Error:           r.URL.Query().Get("error"),
 	}
 	if err := tmpl.ExecuteTemplate(w, "settingsPage", data); err != nil {
@@ -168,4 +172,29 @@ func handleSaveAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+}
+
+func handleAdvanceCutoff(w http.ResponseWriter, r *http.Request) {
+	date := r.FormValue("date")
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	} else {
+		if _, err := time.Parse("2006-01-02", date); err != nil {
+			http.Error(w, "invalid date format (expected YYYY-MM-DD)", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err := setSetting(db, "push_cutoff", date); err != nil {
+		log.Printf("set cutoff: %v", err)
+		http.Error(w, "failed to save cutoff", http.StatusInternalServerError)
+		return
+	}
+
+	cutoffSectionData := struct {
+		Cutoff string
+	}{Cutoff: date}
+	if err := tmpl.ExecuteTemplate(w, "cutoffSection", cutoffSectionData); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
